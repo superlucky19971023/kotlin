@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/header_nav_home">
+
+    <fragment
+        android:id="@+id/header_nav_home"
+        android:name="com.ocr.myapplication.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/header_nav_gallery"
+        android:name="com.ocr.myapplication.ui.reminder.ReminderFragment"
+        android:label="@string/menu_reminder"
+        tools:layout="@layout/fragment_reminder" />
+
+    <fragment
+        android:id="@+id/header_nav_notes"
+        android:name="com.ocr.myapplication.ui.note.NoteFragment"
+        android:label="@string/menu_notes"
+        tools:layout="@layout/fragment_notes" />
+
+    <fragment
+        android:id="@+id/header_nav_repository"
+        android:name="com.ocr.myapplication.ui.repository.RepositoryFragment"
+        android:label="@string/menu_repository"
+        />
+</navigation>
