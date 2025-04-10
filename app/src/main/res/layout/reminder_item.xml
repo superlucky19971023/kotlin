@@ -1,88 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/reminder_item_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginVertical="5dp"
-    android:visibility="visible"
-    app:cardBackgroundColor="#4D2EC5"
-    app:cardCornerRadius="16dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintEnd_toStartOf="parent">
+    android:background="@drawable/reminder_item_background"
+    android:orientation="horizontal"
+    android:padding="10dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:padding="10dp">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:contentDescription="Star icon"
-                    android:src="@drawable/star"
-                    app:tint="#FFFFFF" />
-
-                <TextView
-                    android:id="@+id/reminder_item_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/permanent_reminder"
-                    android:paddingHorizontal="5dp"
-                    android:paddingVertical="2dp"
-                    android:text="10:00AM - 12:00PM"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/reminder_item_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/permanent_reminder"
-                    android:paddingHorizontal="5dp"
-                    android:paddingVertical="2dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="4dp"
-                    android:text="3/19/2025"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-            </LinearLayout>
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:contentDescription="Star icon"
+                android:src="@drawable/star"
+                app:tint="#FFFFFF" />
 
             <TextView
-                android:id="@+id/reminder_item_content"
+                android:id="@+id/reminder_start_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Doctor Visit"
+                android:background="@drawable/permanent_reminder"
+                android:paddingStart="16dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="4dp"
+                android:text="9/4/2025 11:00 AM"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/reminder_end_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/permanent_reminder"
+                android:paddingStart="16dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="4dp"
+                android:text="9/4/2025 3:00 PM"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp" />
         </LinearLayout>
 
-        <ImageView
-            android:id="@+id/reminder_item_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="Pattern"
-            android:scaleType="fitXY"
-            android:src="@drawable/night" />
-
+        <TextView
+            android:id="@+id/reminder_item_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Doctor Visit"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+    <ImageView
+        android:id="@+id/reminder_item_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="Pattern"
+        android:scaleType="fitXY"
+        android:src="@drawable/night" />
+
+</LinearLayout>

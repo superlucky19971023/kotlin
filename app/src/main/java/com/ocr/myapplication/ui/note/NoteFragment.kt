@@ -1,6 +1,7 @@
 package com.ocr.myapplication.ui.note
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -21,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ocr.myapplication.R
 import com.ocr.myapplication.database.Note
 import com.ocr.myapplication.database.NoteRepository
+import com.ocr.myapplication.ui.repository.RepositoryFragment
+import com.ocr.myapplication.ui.repository.RepositoryFragment.OnDocumentClickListener
 import com.ocr.myapplication.viewmodal.NoteViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,16 +34,16 @@ import java.util.Calendar
 
 class NoteFragment : Fragment() {
 
-    private lateinit var noteRepository : NoteRepository
-    private lateinit var noteDataContainer : RecyclerView
+    private lateinit var noteRepository: NoteRepository
+    private lateinit var noteDataContainer: RecyclerView
     private lateinit var adapter: NoteAdapter
     private lateinit var viewModel: NoteViewModel
     private lateinit var editPanel: LinearLayout
     private lateinit var searchView: EditText
     private var searchText: String = ""
-    private lateinit var searchJob:Job
+    private lateinit var searchJob: Job
 
-    override fun onCreateView (
+    override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
@@ -54,7 +57,7 @@ class NoteFragment : Fragment() {
         noteDataContainer.layoutManager = LinearLayoutManager(requireContext())
 
         searchView = view.findViewById(R.id.note_search_input)
-        searchView.addTextChangedListener(object: TextWatcher{
+        searchView.addTextChangedListener(object : TextWatcher {
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 Log.d("asdf", "before" + s.toString())
@@ -122,9 +125,11 @@ class NoteFragment : Fragment() {
         }
     }
 
-    inner class NoteAdapter(private var notes: List<Note>) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
+    inner class NoteAdapter(private var notes: List<Note>) :
+        RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
 
         private var selectedPosition = RecyclerView.NO_POSITION
+        private var prevPosition = RecyclerView.NO_POSITION
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
             val view = LayoutInflater.from(parent.context)
@@ -143,8 +148,19 @@ class NoteFragment : Fragment() {
             val note = notes[position]
 
             // Set the background based on whether this item is selected
+
             if (position == selectedPosition) {
-                holder.adapterContent.setBackgroundResource(R.color.selected_item_color)
+                if (prevPosition == selectedPosition) {
+                    holder.adapterContent.setBackgroundResource(R.color.default_note_item_background)
+                    prevPosition = RecyclerView.NO_POSITION
+                    selectedPosition = RecyclerView.NO_POSITION
+
+                    noteSeletedListener?.onNoteItemSelected(false)
+                } else {
+                    holder.adapterContent.setBackgroundResource(R.color.selected_item_color)
+                    prevPosition = position
+                    noteSeletedListener?.onNoteItemSelected(true)
+                }
             } else {
                 holder.adapterContent.setBackgroundResource(R.color.default_note_item_background);
             }
@@ -154,16 +170,17 @@ class NoteFragment : Fragment() {
 
         override fun getItemCount() = notes.size
 
-        inner class NoteViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private val adapterContainer: CardView = itemView.findViewById(R.id.note_adapter)
             private val adapterTopic: TextView = itemView.findViewById(R.id.note_adapter_topic)
-            private val adapterDescription: TextView = itemView.findViewById(R.id.note_adapter_description)
+            private val adapterDescription: TextView =
+                itemView.findViewById(R.id.note_adapter_description)
             private val adapterDate: TextView = itemView.findViewById(R.id.note_adapter_date)
             private val adapterTime: TextView = itemView.findViewById(R.id.note_adapter_time)
             private val adapterIcon: ImageView = itemView.findViewById(R.id.note_adapter_icon)
             val adapterContent: LinearLayout = itemView.findViewById(R.id.note_adapter_content)
 
-            fun bind(note: Note,position: Int) {
+            fun bind(note: Note, position: Int) {
                 adapterTopic.text = note.topic
                 adapterDescription.text = note.description
                 adapterIcon.setImageResource(note.icon)
@@ -196,11 +213,35 @@ class NoteFragment : Fragment() {
                     if (oldPosition != RecyclerView.NO_POSITION) {
                         notifyItemChanged(oldPosition)
                     }
-                    notifyItemChanged(selectedPosition)
                     // Send the clicked note to the ViewModel
                     viewModel.onNoteClicked(note)
+                    notifyItemChanged(selectedPosition)
                 }
             }
+        }
+    }
+
+
+    private var noteSeletedListener: OnNoteItemSelectedListener? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        // Try to set the listener automatically if the parent implements it
+        if (context is OnNoteItemSelectedListener) {
+            noteSeletedListener = context
+        } else if (parentFragment is OnNoteItemSelectedListener) {
+            noteSeletedListener = parentFragment as OnNoteItemSelectedListener
+        }
+    }
+
+    interface OnNoteItemSelectedListener {
+        fun onNoteItemSelected(boolean: Boolean)
+    }
+
+    companion object {
+        // Factory method to create a new instance of the fragment
+        fun newInstance(): NoteFragment {
+            return NoteFragment()
         }
     }
 }

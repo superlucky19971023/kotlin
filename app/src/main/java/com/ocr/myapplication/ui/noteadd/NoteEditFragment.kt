@@ -40,7 +40,7 @@ class NoteEditFragment(note: Note) : Fragment() {
         noteRepository = NoteRepository(requireContext())
 
         // Get ViewModel from activity
-        viewModel = ViewModelProvider(requireActivity()).get(NoteViewModel::class.java)
+        viewModel = ViewModelProvider(requireActivity())[NoteViewModel::class.java]
 
         val noteIconSelector = view.findViewById<LinearLayout>(R.id.note_icon_selector)
         val noteAddCancel = view.findViewById<TextView>(R.id.note_add_cancel)
@@ -157,4 +157,5 @@ class NoteEditFragment(note: Note) : Fragment() {
         }
         return imageView
     }
+
 }

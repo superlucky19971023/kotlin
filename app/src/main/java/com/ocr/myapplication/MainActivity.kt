@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.viewModels
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
@@ -16,6 +17,8 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import com.ocr.myapplication.database.DatabaseHelper
 import com.ocr.myapplication.database.Note
@@ -27,17 +30,21 @@ import com.ocr.myapplication.sharedpreference.AppPreferences
 import com.ocr.myapplication.ui.LoginModalFragment
 import com.ocr.myapplication.ui.app.AppFragment
 import com.ocr.myapplication.ui.chatscreen.ChatScreenFragment
+import com.ocr.myapplication.ui.comment.CommentFragment
 import com.ocr.myapplication.ui.note.NoteFragment
 import com.ocr.myapplication.ui.noteadd.NoteAddFragment
 import com.ocr.myapplication.ui.noteadd.NoteEditFragment
 import com.ocr.myapplication.ui.profile.ProfileFragment
+import com.ocr.myapplication.ui.reminder.ReminderFragment
 import com.ocr.myapplication.ui.reminderedit.ReminderAddFragment
 import com.ocr.myapplication.ui.reminderedit.ReminderEditFragment
+import com.ocr.myapplication.ui.repository.RepositoryFragment
+import com.ocr.myapplication.ui.respositorydetail.RepositoryDetailFragment
 import com.ocr.myapplication.ui.subscription.SubscriptionFragment
 import com.ocr.myapplication.viewmodal.NoteViewModel
 import com.ocr.myapplication.viewmodal.ReminderViewModel
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListener, NoteFragment.OnNoteItemSelectedListener, ReminderFragment.OnReminderItemSelectedListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -51,6 +58,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var noteRepository : NoteRepository
     private lateinit var reminderRepository: ReminderRepository
     private lateinit var reminderViewModel: ReminderViewModel
+
+
+    private lateinit var noteEdit : LinearLayout
+    private lateinit var noteDelete : LinearLayout
+    private lateinit var reminderEdit: LinearLayout
+    private lateinit var reminderDelete: LinearLayout
+
+    private var clickState = BooleanArray(10) { false }
 
     @SuppressLint("CutPasteId", "ResourceType")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,119 +120,91 @@ class MainActivity : AppCompatActivity() {
         third = findViewById(R.id.third)
         fourth = findViewById(R.id.fourth)
         val reminderAdd = findViewById<LinearLayout>(R.id.reminder_add)
-        val reminderEdit = findViewById<LinearLayout>(R.id.reminder_edit)
-        val noteEdit = findViewById<LinearLayout>(R.id.edit)
+        reminderEdit = findViewById(R.id.reminder_edit)
+        noteEdit = findViewById(R.id.note_edit)
         val noteAdd = findViewById<LinearLayout>(R.id.note_add)
         val comment = findViewById<LinearLayout>(R.id.comment)
-        val reminderDelete = findViewById<LinearLayout>(R.id.reminder_delete)
-        val noteDelete = findViewById<LinearLayout>(R.id.note_delete)
-//        first.setOnClickListener {
-//            supportFragmentManager.beginTransaction()
-//                .setCustomAnimations(
-//                    R.anim.slide_up_enter,
-//                    R.anim.fade_out,
-//                    R.anim.fade_in,
-//                    R.anim.slide_up_exit
-//                )
-//                .replace(R.id.nav_host_fragment_content_main, AppFragment())
-//                .addToBackStack(null)
-//                .commit()
-//        }
+        reminderDelete = findViewById(R.id.reminder_delete)
+        noteDelete = findViewById(R.id.note_delete)
 
-        first.setOnClickListener {
-            val loginFragment = LoginModalFragment()
-            loginFragment.show(supportFragmentManager, "loginModal")
-        }
-        second.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_up_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_up_exit
-                )
-                .replace(R.id.nav_host_fragment_content_main, SubscriptionFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-        third.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_down_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_down_exit
-                )
-                .replace(R.id.nav_host_fragment_content_main, ProfileFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-        fourth.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_up_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_up_exit
-                )
-                .replace(R.id.nav_host_fragment_content_main, ChatScreenFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-        reminderAdd.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_down_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_down_exit
-                )
-                .add(R.id.nav_host_fragment_content_main, ReminderAddFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-        // Fix the noteAdd click listener to properly handle fragment communication
-        noteAdd.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_down_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_down_exit
-                )
-                .add(R.id.nav_host_fragment_content_main, NoteAddFragment())
-                .addToBackStack(null)
-                .commit()
-        }
+        setupClickListener(first, AppFragment(), 0)
+        setupClickListener(second, SubscriptionFragment(), 1)
+        setupClickListener(third, ProfileFragment(), 2)
+        setupClickListener(fourth, ChatScreenFragment(), 3)
+        setupClickListener(reminderAdd, ReminderAddFragment(), 4)
+//        setupClickListener(reminderEdit, ReminderEditFragment(selectedReminder), 5)
+        setupClickListener(noteAdd, NoteAddFragment(), 6)
+//        setupClickListener(noteEdit, NoteEditFragment(selectedNote), 7)
+        setupClickListener(comment, CommentFragment(), 8)
 
-        noteEdit.setOnClickListener {
-            Log.d("NoteEdit", "onCreate: "+selectedNote.description)
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_down_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_down_exit
-                )
-                .add(R.id.nav_host_fragment_content_main, NoteEditFragment(selectedNote))
-                .addToBackStack(null)
-                .commit()
-        }
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentViewDestroyed(fm: FragmentManager, f: Fragment) {
+                    super.onFragmentViewDestroyed(fm, f)
+                    clickState = BooleanArray(10){ false }
+                }
+            }, true)
 
-        reminderEdit.setOnClickListener {
-            Log.d("NoteEdit", "onCreate: "+selectedReminder.content)
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_down_enter,
-                    R.anim.fade_out,
-                    R.anim.fade_in,
-                    R.anim.slide_down_exit
-                )
-                .add(R.id.nav_host_fragment_content_main, ReminderEditFragment(selectedReminder))
-                .addToBackStack(null)
-                .commit()
-        }
-
+        reminderEdit.setOnClickListener(View.OnClickListener {
+            if (!clickState[5]) {
+                supportFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_up_to_down_enter,
+                        R.anim.fade_out,
+                        R.anim.fade_in,
+                        R.anim.slide_down_enter
+                    )
+                    .replace(R.id.nav_host_fragment_content_main, ReminderEditFragment(selectedReminder))
+                    .addToBackStack(null)
+                    .commit()
+                clickState = BooleanArray(10) { false }
+            } else {
+                val currentFragment =
+                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                if (currentFragment != null) {
+                    supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_down_exit,
+                            R.anim.fade_out,
+                            R.anim.fade_in,
+                            R.anim.slide_up_enter
+                        )
+                        .remove(currentFragment)
+                        .commit()
+                }
+            }
+            clickState[5] = !clickState[5]
+        })
+        noteEdit.setOnClickListener(View.OnClickListener {
+            if (!clickState[7]) {
+                supportFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_up_to_down_enter,
+                        R.anim.fade_out,
+                        R.anim.fade_in,
+                        R.anim.slide_down_enter
+                    )
+                    .replace(R.id.nav_host_fragment_content_main, NoteEditFragment(selectedNote))
+                    .addToBackStack(null)
+                    .commit()
+                clickState = BooleanArray(10) { false }
+            } else {
+                val currentFragment =
+                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                if (currentFragment != null) {
+                    supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_down_exit,
+                            R.anim.fade_out,
+                            R.anim.fade_in,
+                            R.anim.slide_up_enter
+                        )
+                        .remove(currentFragment)
+                        .commit()
+                }
+            }
+            clickState[7] = !clickState[7]
+        })
         noteDelete.setOnClickListener(View.OnClickListener {
             val result = noteRepository.deleteNote(selectedNote.id)
             if (result > 0) {
@@ -239,7 +226,6 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "Failed to delete note: ID=${selectedNote.id}")
             }
         })
-
         reminderDelete.setOnClickListener(View.OnClickListener {
             val result = reminderRepository.deleteReminder(selectedReminder.id)
             if (result > 0) {
@@ -261,6 +247,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "Failed to delete note: ID=${selectedNote.id}")
             }
         })
+
 
         val navController = findNavController(R.id.nav_host_fragment_content_main)
 
@@ -292,11 +279,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 "Notes" -> {
                     reminderAdd.visibility = View.GONE
-                    noteEdit.visibility = View.VISIBLE
+                    noteEdit.visibility = View.GONE
                     noteAdd.visibility = View.VISIBLE
                     comment.visibility = View.GONE
                     reminderEdit.visibility = View.GONE
-                    noteDelete.visibility = View.VISIBLE
+                    noteDelete.visibility = View.GONE
                     reminderDelete.visibility = View.GONE
                 }
                 "Reminder" -> {
@@ -304,8 +291,8 @@ class MainActivity : AppCompatActivity() {
                     noteEdit.visibility = View.GONE
                     noteAdd.visibility = View.GONE
                     comment.visibility = View.GONE
-                    reminderEdit.visibility = View.VISIBLE
-                    reminderDelete.visibility = View.VISIBLE
+                    reminderEdit.visibility = View.GONE
+                    reminderDelete.visibility = View.GONE
                     noteDelete.visibility = View.GONE
                 }
                 "Repositories" -> {
@@ -325,14 +312,95 @@ class MainActivity : AppCompatActivity() {
             // Notify the ViewModel that a note was added
             noteViewModel.noteAdded()
         }
+
+    }
+
+    override fun onDocumentClicked(document: RepositoryFragment.Document) {
+        Log.d("Document", "onDocumentClicked: ")
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.nav_host_fragment_content_main, RepositoryDetailFragment(document.imageResId))
+            .addToBackStack(null)
+            .commit()
+
+    }
+
+    fun clearCheckState(){
+        for (i in 0 until 10){
+            this.clickState[i] = false
+        }
+    }
+
+    private fun setupClickListener(linearLayout: LinearLayout, fragment: Fragment, index: Int) {
+        linearLayout.setOnClickListener {
+            if (index !=2 && index != 6 && index != 8) {
+                if (!clickState[index]) {
+                    supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_up_enter,
+                            R.anim.fade_out,
+                            R.anim.fade_in,
+                            R.anim.slide_down_exit
+                        )
+                        .replace(R.id.nav_host_fragment_content_main, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                    clickState = BooleanArray(10) { false }
+                } else {
+                    val currentFragment =
+                        supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                    if (currentFragment != null) {
+                        supportFragmentManager.beginTransaction()
+                            .setCustomAnimations(
+                                R.anim.slide_down_enter,
+                                R.anim.fade_out,
+                                R.anim.fade_in,
+                                R.anim.slide_up_exit
+                            )
+                            .remove(currentFragment)
+                            .commit()
+                    }
+                }
+            } else {
+                if (!clickState[index]) {
+                    supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_up_to_down_enter,
+                            R.anim.fade_out,
+                            R.anim.fade_in,
+                            R.anim.slide_down_enter
+                        )
+                        .replace(R.id.nav_host_fragment_content_main, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                    clickState = BooleanArray(10) { false }
+                } else {
+                    val currentFragment =
+                        supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                    if (currentFragment != null) {
+                        supportFragmentManager.beginTransaction()
+                            .setCustomAnimations(
+                                R.anim.slide_down_exit,
+                                R.anim.fade_out,
+                                R.anim.fade_in,
+                                R.anim.slide_up_enter
+                            )
+                            .remove(currentFragment)
+                            .commit()
+                    }
+                }
+            }
+            clickState[index] = !clickState[index]
+        }
     }
 
     private fun handleNoteClick(note: Note) {
         selectedNote = note
+        clickState[7] = false
         Log.d("MainActivity", "Note clicked: ID=${note.id}, Topic=${note.topic}, Description=${note.description}")
     }
     private fun handleReminderClick(reminder: Reminder) {
         selectedReminder = reminder
+        clickState[5] = false
         Log.d("MainActivity", "Note clicked: ID=${reminder.id}, Description=${reminder.content}")
     }
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -343,5 +411,27 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
+
+    override fun onNoteItemSelected(boolean: Boolean) {
+        if(boolean) {
+            noteEdit.visibility = View.VISIBLE
+            noteDelete.visibility = View.VISIBLE
+        }
+        else {
+            noteEdit.visibility = View.GONE
+            noteDelete.visibility = View.GONE
+        }
+    }
+
+    override fun onReminderItemSelected(boolean: Boolean) {
+        if(boolean) {
+            reminderEdit.visibility = View.VISIBLE
+            reminderDelete.visibility = View.VISIBLE
+        }
+        else {
+            reminderEdit.visibility = View.GONE
+            reminderDelete.visibility = View.GONE
+        }
     }
 }

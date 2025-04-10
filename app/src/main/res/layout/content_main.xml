@@ -64,14 +64,15 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/edit"
+                    android:id="@+id/note_edit"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginEnd="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/bottom_nav_button"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="5dp">
+                    android:paddingHorizontal="5dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="20dp"
@@ -93,7 +94,8 @@
                     android:layout_weight="1"
                     android:background="@drawable/bottom_nav_button"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="5dp">
+                    android:paddingHorizontal="5dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="20dp"

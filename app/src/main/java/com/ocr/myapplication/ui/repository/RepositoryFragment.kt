@@ -1,5 +1,6 @@
 package com.ocr.myapplication.ui.repository
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +20,22 @@ class RepositoryFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: DocumentAdapter
     private lateinit var background: ConstraintLayout
+    private var documentClickListener: OnDocumentClickListener? = null
+
+    // Interface for document click events
+    interface OnDocumentClickListener {
+        fun onDocumentClicked(document: Document)
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        // Try to set the listener automatically if the parent implements it
+        if (context is OnDocumentClickListener) {
+            documentClickListener = context
+        } else if (parentFragment is OnDocumentClickListener) {
+            documentClickListener = parentFragment as OnDocumentClickListener
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +54,7 @@ class RepositoryFragment : Fragment() {
 
         val appPreferences = AppPreferences(requireContext())
         background.setBackgroundResource(appPreferences.getOtherBackgroundImage())
+
         // Set up staggered grid layout with 3 columns
         val layoutManager = StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
         recyclerView.layoutManager = layoutManager
@@ -56,6 +74,11 @@ class RepositoryFragment : Fragment() {
 
         adapter = DocumentAdapter(documents)
         recyclerView.adapter = adapter
+    }
+
+    // Method to manually set the click listener
+    fun setOnDocumentClickListener(listener: OnDocumentClickListener) {
+        this.documentClickListener = listener
     }
 
     // Document data class
@@ -103,24 +126,11 @@ class RepositoryFragment : Fragment() {
 
                 // Set click listener
                 itemView.setOnClickListener {
-                    // Handle document click - can use interface callback to Activity
+                    // Use the callback to notify about the click
                     documentClickListener?.onDocumentClicked(document)
                 }
             }
         }
-    }
-
-    // Interface for document click events
-    interface OnDocumentClickListener {
-        fun onDocumentClicked(document: Document)
-    }
-
-    // Listener field that can be set from the activity
-    private var documentClickListener: OnDocumentClickListener? = null
-
-    // Method to set the click listener
-    fun setOnDocumentClickListener(listener: OnDocumentClickListener) {
-        this.documentClickListener = listener
     }
 
     companion object {

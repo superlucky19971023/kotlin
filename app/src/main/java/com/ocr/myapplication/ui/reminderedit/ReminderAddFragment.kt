@@ -47,15 +47,10 @@ class ReminderAddFragment: Fragment() {
         return inflater.inflate(R.layout.fragment_reminder_edit, container, false)
     }
 
-    private fun parseDateTimeToMillis(input: String): Long? {
-        return try {
-            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                .apply { isLenient = false } // Strict validation
-                .parse(input)
-                ?.time
-        } catch (e: Exception) {
-            null
-        }
+    private fun parseDateTimeToMillis(input: String): Long {
+        val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val date = format.parse(input)
+        return date?.time ?: 0L
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -93,7 +88,8 @@ class ReminderAddFragment: Fragment() {
         }
         saveButton.setOnClickListener(View.OnClickListener {
             val descriptionInfo = description.text
-            if (selectedImageViewId != 0 && descriptionInfo != null && descriptionInfo.isNotEmpty() && startTime.text.isNotEmpty() && startTime.text.isNotEmpty()) {
+            if (selectedImageViewId != 0 && descriptionInfo != null && descriptionInfo.isNotEmpty()
+                && startTime.text.isNotEmpty() && startDate.text.isNotEmpty() && endTime.text.isNotEmpty() && endDate.text.isNotEmpty()) {
 
                 val reminderStartTime = parseDateTimeToMillis(startDate.text.toString() + " " + startTime.text.toString())
                 val reminderEndTime = parseDateTimeToMillis(endDate.text.toString() + " " + endTime.text.toString())
@@ -105,6 +101,7 @@ class ReminderAddFragment: Fragment() {
                     endAt = reminderEndTime.toString()
                 )
 
+                Log.d("asdf", newReminder.content + " --- " + newReminder.icon + " --- " + newReminder.startAt + " --- " + newReminder.endAt)
                 val insertedId= reminderRepository.insertReminder(newReminder)
 
                 if (insertedId == -1L) {
@@ -115,6 +112,11 @@ class ReminderAddFragment: Fragment() {
                     viewModel.reminderAdded()
                     parentFragmentManager.beginTransaction().remove(this).commit()
                 }
+                startDate.setText("")
+                startTime.setText("")
+                endDate.setText("")
+                endTime.setText("")
+                description.setText("")
             } else {
                 if (descriptionInfo == null) {
                     description.error = "Description is required"

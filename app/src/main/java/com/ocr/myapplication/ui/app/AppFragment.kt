@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,12 +14,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.replace
 import com.ocr.myapplication.MainActivity
 import com.ocr.myapplication.R
 import com.ocr.myapplication.animation.enableDragToDismiss
 import com.ocr.myapplication.sharedpreference.AppPreferences
-import com.ocr.myapplication.ui.home.HomeFragment
 
 class AppFragment: Fragment() {
     private var selectedImageViews = arrayOfNulls<ImageView>(5)
@@ -43,6 +40,7 @@ class AppFragment: Fragment() {
         val appIconLayout = view.findViewById<LinearLayout>(R.id.app_icon_selector);
         val reminderLayout = view.findViewById<LinearLayout>(R.id.reminder_selector);
         app_save_button = view.findViewById(R.id.app_save_button);
+        val cancelButton = view.findViewById<TextView>(R.id.app_cancel_button);
 
         app_save_button.setOnClickListener(View.OnClickListener {
             val appSharedPreferences = AppPreferences(requireContext())
@@ -50,6 +48,12 @@ class AppFragment: Fragment() {
             selectedImageViewIds[1]?.let { it1 -> appSharedPreferences.setChatBackgroundImage(it1) }
             selectedImageViewIds[2]?.let { lt1 -> appSharedPreferences.setOtherBackgroundImage(lt1) }
             startActivity(Intent(requireContext(), MainActivity::class.java))
+        })
+
+        cancelButton.setOnClickListener(View.OnClickListener {
+            parentFragmentManager.beginTransaction()
+                .remove(this)
+                .commit()
         })
 
         val themes = listOf(
@@ -79,8 +83,8 @@ class AppFragment: Fragment() {
             R.drawable.chatscreen
         )
 //
-        for (chat_screen in chatscreens) {
-            val imageView = createImageView(chat_screen, 1)
+        for (chatScreen in chatscreens) {
+            val imageView = createImageView(chatScreen, 1)
             chatScreenLayout.addView(imageView)
         }
 
@@ -134,7 +138,6 @@ class AppFragment: Fragment() {
     @SuppressLint("ResourceAsColor")
     private fun createImageView(imageId: Int, index: Int): ImageView {
         val imageView = ImageView(requireContext())
-
         // Set layout parameters with margins
         when (index) {
             0 -> {
@@ -190,8 +193,6 @@ class AppFragment: Fragment() {
                 imageView.setImageResource(imageId)
             }
         }
-
-
 
         // Set scaleType to ensure content fits properly
         imageView.scaleType = ImageView.ScaleType.FIT_XY

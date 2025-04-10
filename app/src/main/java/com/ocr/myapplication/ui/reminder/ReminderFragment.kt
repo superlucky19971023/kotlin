@@ -1,6 +1,7 @@
 package com.ocr.myapplication.ui.reminder
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -21,6 +22,8 @@ import com.ocr.myapplication.database.NoteRepository
 import com.ocr.myapplication.database.Reminder
 import com.ocr.myapplication.database.ReminderRepository
 import com.ocr.myapplication.sharedpreference.AppPreferences
+import com.ocr.myapplication.ui.note.NoteFragment
+import com.ocr.myapplication.ui.note.NoteFragment.OnNoteItemSelectedListener
 import com.ocr.myapplication.ui.reminderedit.ReminderEditFragment
 import com.ocr.myapplication.viewmodal.ReminderViewModel
 import java.util.Calendar
@@ -33,7 +36,7 @@ class ReminderFragment : Fragment() {
     private lateinit var editPanel: LinearLayout
     private lateinit var reminderRepository: ReminderRepository
 
-    override fun onCreateView (
+    override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
@@ -70,7 +73,10 @@ class ReminderFragment : Fragment() {
                 }
             }
         }
-        parentFragmentManager.setFragmentResultListener("reminder_added", viewLifecycleOwner) { _, _ ->
+        parentFragmentManager.setFragmentResultListener(
+            "reminder_added",
+            viewLifecycleOwner
+        ) { _, _ ->
             refreshRemindersList()
         }
 
@@ -84,7 +90,6 @@ class ReminderFragment : Fragment() {
             if (::adapter.isInitialized) {
                 adapter.updateData(data)
             } else {
-                Log.d("Set Adapter", "refreshRemindersList: "+data.size)
                 adapter = ReminderAdapter(data)
                 reminderContainerRecyclerView.adapter = adapter
             }
@@ -94,8 +99,10 @@ class ReminderFragment : Fragment() {
     }
 
 
-    inner class ReminderAdapter(private var reminders: List<Reminder>) : RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>() {
+    inner class ReminderAdapter(private var reminders: List<Reminder>) :
+        RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder>() {
         private var selectedPosition = RecyclerView.NO_POSITION
+        private var prevPosition = RecyclerView.NO_POSITION
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReminderViewHolder {
             val view = LayoutInflater.from(parent.context)
@@ -107,43 +114,52 @@ class ReminderFragment : Fragment() {
         fun updateData(newReminder: List<Reminder>) {
             reminders = newReminder
             notifyDataSetChanged()
-            Log.d("ReminderAdapter", "Data updated with ${reminders.size} items") // Add logging
         }
 
         override fun getItemCount(): Int {
             return reminders.size
         }
 
-        override fun onBindViewHolder(holder: ReminderViewHolder, position: Int) {
-            val reminder = reminders[position]
+        override fun onBindViewHolder(holder: ReminderViewHolder, @SuppressLint("RecyclerView") index: Int) {
+            val reminder = reminders[index]
 
             // Set the background based on whether this item is selected
-            if (position == selectedPosition) {
-                holder.adapterContainer.setBackgroundResource(R.color.selected_item_color)
+            if (index == selectedPosition) {
+                if (prevPosition == selectedPosition) {
+                    holder.adapterContainer.setBackgroundResource(R.color.default_note_item_background)
+                    prevPosition = RecyclerView.NO_POSITION
+                    selectedPosition = RecyclerView.NO_POSITION
+
+                    reminderSeletedListener?.onReminderItemSelected(false)
+                } else {
+                    holder.adapterContainer.setBackgroundResource(R.color.selected_item_color)
+                    prevPosition = index
+                    reminderSeletedListener?.onReminderItemSelected(true)
+                }
             } else {
                 holder.adapterContainer.setBackgroundResource(R.color.default_note_item_background);
             }
 
-            holder.bind(reminder, position)
+            holder.bind(reminder, index)
         }
 
-        inner class ReminderViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class ReminderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-            val adapterContainer: CardView = itemView.findViewById(R.id.reminder_item_card)
-            private val adapterDescription: TextView = itemView.findViewById(R.id.reminder_item_content)
-            private val adapterDate: TextView = itemView.findViewById(R.id.reminder_item_date)
-            private val adapterTime: TextView = itemView.findViewById(R.id.reminder_item_time)
+            val adapterContainer: LinearLayout = itemView.findViewById(R.id.reminder_item_card)
+            private val adapterDescription: TextView =
+                itemView.findViewById(R.id.reminder_item_content)
+            private val adapterStart: TextView = itemView.findViewById(R.id.reminder_start_time)
+            private val adapterEnd: TextView = itemView.findViewById(R.id.reminder_end_time)
             private val adapterIcon: ImageView = itemView.findViewById(R.id.reminder_item_icon)
-//            val adapterContent: LinearLayout = itemView.findViewById(R.id.reminder_adapter_content)
 
-            fun bind(reminder: Reminder,position: Int) {
+            fun bind(reminder: Reminder, position: Int) {
                 adapterDescription.text = reminder.content
                 adapterIcon.setImageResource(reminder.icon)
                 val calendar = Calendar.getInstance().apply {
                     timeInMillis = reminder.startAt.toLong()
                 }
 
-                Log.d("ReminderBind", "bind: "+reminder.content)
+                Log.d("ReminderBind", "bind: " + reminder.content)
 
                 val year = calendar.get(Calendar.YEAR)
                 val month = calendar.get(Calendar.MONTH) + 1
@@ -152,30 +168,64 @@ class ReminderFragment : Fragment() {
                 val minute = calendar.get(Calendar.MINUTE)
                 val amPm = calendar.get(Calendar.AM_PM)
                 val amPmText = if (amPm == Calendar.AM) "AM" else "PM"
-                val date = "$month/$day/$year"
-                val time = "$hour:$minute $amPmText"
-                adapterDate.text = date
-                adapterTime.text = time
+                val startTime = "$month/$day/$year $hour:$minute $amPmText"
+                adapterStart.text = startTime
+
+                val calendar1 = Calendar.getInstance().apply {
+                    timeInMillis = reminder.startAt.toLong()
+                }
+
+
+                val year1 = calendar1.get(Calendar.YEAR)
+                val month1 = calendar1.get(Calendar.MONTH) + 1
+                val day1 = calendar1.get(Calendar.DAY_OF_MONTH)
+                val hour1 = calendar1.get(Calendar.HOUR)
+                val minute1 = calendar1.get(Calendar.MINUTE)
+                val amPm1 = calendar1.get(Calendar.AM_PM)
+                val amPmText1 = if (amPm1 == Calendar.AM) "AM" else "PM"
+                val endTime = "$month1/$day1/$year1 $hour1:$minute1 $amPmText1"
+                adapterEnd.text = endTime
 
                 adapterContainer.setOnClickListener {
                     // Change background color to indicate selection
                     adapterContainer.setBackgroundResource(R.color.selected_item_color)
-
-
                     val oldPosition = selectedPosition
-
                     // Update the selected position
                     selectedPosition = position
-
                     // Notify adapter to update the old and new positions
                     if (oldPosition != RecyclerView.NO_POSITION) {
                         notifyItemChanged(oldPosition)
                     }
-                    notifyItemChanged(selectedPosition)
+
                     // Send the clicked note to the ViewModel
                     viewModel.onReminderClicked(reminder)
+                    notifyItemChanged(selectedPosition)
                 }
             }
+        }
+    }
+
+
+    private var reminderSeletedListener: OnReminderItemSelectedListener? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        // Try to set the listener automatically if the parent implements it
+        if (context is OnReminderItemSelectedListener) {
+            reminderSeletedListener = context
+        } else if (parentFragment is OnReminderItemSelectedListener) {
+            reminderSeletedListener = parentFragment as OnReminderItemSelectedListener
+        }
+    }
+
+    interface OnReminderItemSelectedListener {
+        fun onReminderItemSelected(boolean: Boolean)
+    }
+
+    companion object {
+        // Factory method to create a new instance of the fragment
+        fun newInstance(): ReminderFragment {
+            return ReminderFragment()
         }
     }
 }

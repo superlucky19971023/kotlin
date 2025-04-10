@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         applicationId = "com.ocr.myapplication"
-        minSdk = 35
-        targetSdk = 35
+        minSdk = 28
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 

@@ -19,6 +19,10 @@ import com.ocr.myapplication.database.Reminder
 import com.ocr.myapplication.database.ReminderRepository
 import com.ocr.myapplication.viewmodal.ReminderViewModel
 import enableDragToTopDismiss
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class ReminderEditFragment(reminder: Reminder): Fragment() {
     private var selectedImageView : ImageView? = null
@@ -28,6 +32,11 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
     private lateinit var cancelButton: TextView
     private lateinit var reminderRepository: ReminderRepository
     private lateinit var viewModel: ReminderViewModel
+    private lateinit var startDate: EditText
+    private lateinit var startTime: EditText
+    private lateinit var endDate: EditText
+    private lateinit var endTime: EditText
+    private val calendar = Calendar.getInstance()
     private var currentReminder : Reminder = reminder
 
     override fun onCreateView(
@@ -38,6 +47,16 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
         return inflater.inflate(R.layout.fragment_reminder_edit, container, false)
     }
 
+    private fun parseDataTimeToMillos(input: String): Long? {
+        return try {
+            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                .apply { isLenient = false }
+                .parse(input)
+                ?.time
+        } catch (e: Exception) {
+            null
+        }
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -47,9 +66,21 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
         val themeLinearLayout = view.findViewById<LinearLayout>(R.id.theme_selector);
         saveButton = view.findViewById(R.id.reminder_save_button);
         cancelButton = view.findViewById(R.id.reminder_cancel_button)
-
+        startDate = view.findViewById(R.id.start_at_date)
+        startTime = view.findViewById(R.id.start_at_time)
+        endDate = view.findViewById(R.id.end_at_date)
+        endTime = view.findViewById(R.id.end_at_time)
         description = view.findViewById(R.id.reminder_add_descripton)
+        val date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val time = SimpleDateFormat("HH:mm", Locale.getDefault())
 
+// Setting text for start date and time TextViews
+        startDate.setText(date.format(Date(this.currentReminder.startAt.toLong())))
+        startTime.setText(time.format(Date(this.currentReminder.startAt.toLong())))
+
+// Setting text for end date and time TextViews
+        endDate.setText(date.format(Date(this.currentReminder.endAt.toLong())))
+        endTime.setText(time.format(Date(this.currentReminder.endAt.toLong())))
         description.setText(this.currentReminder.content)
 
         cancelButton.setOnClickListener {
