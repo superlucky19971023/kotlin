@@ -1,6 +1,8 @@
 package com.ocr.myapplication.ui.reminderedit
 
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -32,10 +34,10 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
     private lateinit var cancelButton: TextView
     private lateinit var reminderRepository: ReminderRepository
     private lateinit var viewModel: ReminderViewModel
-    private lateinit var startDate: EditText
-    private lateinit var startTime: EditText
-    private lateinit var endDate: EditText
-    private lateinit var endTime: EditText
+    private lateinit var startDate: TextView
+    private lateinit var startTime: TextView
+    private lateinit var endDate: TextView
+    private lateinit var endTime: TextView
     private val calendar = Calendar.getInstance()
     private var currentReminder : Reminder = reminder
 
@@ -47,16 +49,12 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
         return inflater.inflate(R.layout.fragment_reminder_edit, container, false)
     }
 
-    private fun parseDataTimeToMillos(input: String): Long? {
-        return try {
-            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                .apply { isLenient = false }
-                .parse(input)
-                ?.time
-        } catch (e: Exception) {
-            null
-        }
+    private fun parseDateTimeToMillis(input: String): Long {
+        val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val date = format.parse(input)
+        return date?.time ?: 0L
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -75,14 +73,26 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
         val time = SimpleDateFormat("HH:mm", Locale.getDefault())
 
 // Setting text for start date and time TextViews
-        startDate.setText(date.format(Date(this.currentReminder.startAt.toLong())))
-        startTime.setText(time.format(Date(this.currentReminder.startAt.toLong())))
+        startDate.text = (date.format(Date(this.currentReminder.startAt.toLong())))
+        startTime.text = (time.format(Date(this.currentReminder.startAt.toLong())))
 
 // Setting text for end date and time TextViews
-        endDate.setText(date.format(Date(this.currentReminder.endAt.toLong())))
-        endTime.setText(time.format(Date(this.currentReminder.endAt.toLong())))
+        endDate.text = (date.format(Date(this.currentReminder.endAt.toLong())))
+        endTime.text = (time.format(Date(this.currentReminder.endAt.toLong())))
         description.setText(this.currentReminder.content)
 
+        startDate.setOnClickListener{
+            showDatePicker(0)
+        }
+        startTime.setOnClickListener{
+            showTimePicker(0)
+        }
+        endDate.setOnClickListener{
+            showDatePicker(1)
+        }
+        endTime.setOnClickListener{
+            showTimePicker(1)
+        }
         cancelButton.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .remove(this)
@@ -91,12 +101,17 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
 
         saveButton.setOnClickListener(View.OnClickListener {
             val descriptionInfo = description.text
-            if (selectedImageViewId != 0 && descriptionInfo != null && descriptionInfo.isNotEmpty()) {
+            if (selectedImageViewId != 0 && descriptionInfo != null && descriptionInfo.isNotEmpty()
+                && startTime.text.isNotEmpty() && startDate.text.isNotEmpty() && endTime.text.isNotEmpty() && endDate.text.isNotEmpty()) {
+
+                val reminderStartTime = parseDateTimeToMillis(startDate.text.toString() + " " + startTime.text.toString())
+                val reminderEndTime = parseDateTimeToMillis(endDate.text.toString() + " " + endTime.text.toString())
+
                 val newReminder = Reminder(
                     content = descriptionInfo.toString(),
                     icon = selectedImageViewId,
-                    startAt = System.currentTimeMillis().toString(),
-                    endAt = System.currentTimeMillis().toString(),
+                    startAt = reminderStartTime.toString(),
+                    endAt = reminderEndTime.toString(),
                     id = this.currentReminder.id
                 )
 
@@ -104,6 +119,11 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
                 parentFragmentManager.setFragmentResult("reminder_added", Bundle())
                 viewModel.reminderAdded()
                 parentFragmentManager.beginTransaction().remove(this).commit()
+                startDate.text = ""
+                startTime.text = ""
+                endDate.text = ""
+                endTime.text = ""
+                description.setText("")
             } else {
                 if (descriptionInfo == null) {
                     description.error = "Description is required"
@@ -125,6 +145,68 @@ class ReminderEditFragment(reminder: Reminder): Fragment() {
             val imageView = createImageView(icon)
             themeLinearLayout.addView(imageView)
         }
+    }
+
+
+    private fun showDatePicker(kind: Int) {
+        val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.MONTH, month)
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            if (kind == 0) {
+                updateStartDateInView()
+            } else {
+                updateEndDateInView()
+            }
+        }
+
+        DatePickerDialog(
+            requireContext(),
+            dateSetListener,
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showTimePicker(kind: Int) {
+        val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
+            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+            calendar.set(Calendar.MINUTE, minute)
+            if (kind == 0) {
+                updateStartTimeInView()
+            } else {
+                updateEndTimeInView()
+            }
+        }
+
+        TimePickerDialog(
+            requireContext(),
+            timeSetListener,
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        ).show()
+    }
+
+    private fun updateStartDateInView() {
+        val format = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+        startDate.text = (format.format(calendar.time))
+    }
+
+    private fun updateStartTimeInView() {
+        val format = SimpleDateFormat("HH:mm", Locale.US)
+        startTime.text = (format.format(calendar.time))
+    }
+
+    private fun updateEndDateInView() {
+        val format = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+        endDate.text = (format.format(calendar.time))
+    }
+
+    private fun updateEndTimeInView() {
+        val format = SimpleDateFormat("HH:mm", Locale.US)
+        endTime.text = (format.format(calendar.time))
     }
 
     @SuppressLint("ResourceAsColor")

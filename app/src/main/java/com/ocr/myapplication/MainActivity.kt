@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.View
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.viewModels
@@ -58,12 +60,15 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
     private lateinit var noteRepository : NoteRepository
     private lateinit var reminderRepository: ReminderRepository
     private lateinit var reminderViewModel: ReminderViewModel
-
+    private lateinit var miniChatText: TextView
+    var chatScreenClick: Int = 0
 
     private lateinit var noteEdit : LinearLayout
     private lateinit var noteDelete : LinearLayout
     private lateinit var reminderEdit: LinearLayout
     private lateinit var reminderDelete: LinearLayout
+    private lateinit var miniChatSendButton: ImageView
+    private lateinit var miniChatInput: EditText
 
     private var clickState = BooleanArray(10) { false }
 
@@ -88,16 +93,6 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Initialize ViewModel
-        noteViewModel = ViewModelProvider(this)[NoteViewModel::class.java]
-
-        // Observe note click events
-        noteViewModel.noteClickedEvent.observe(this) { event ->
-            event.getContentIfNotHandled()?.let { note ->
-                handleNoteClick(note)
-            }
-        }
 
         reminderViewModel = ViewModelProvider(this)[ReminderViewModel::class.java]
 
@@ -126,22 +121,24 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
         val comment = findViewById<LinearLayout>(R.id.comment)
         reminderDelete = findViewById(R.id.reminder_delete)
         noteDelete = findViewById(R.id.note_delete)
+        miniChatText = findViewById(R.id.mini_chat_text)
+        miniChatSendButton = findViewById(R.id.mini_chat_send_button)
+        miniChatInput = findViewById(R.id.mini_chat_input)
 
         setupClickListener(first, AppFragment(), 0)
         setupClickListener(second, SubscriptionFragment(), 1)
         setupClickListener(third, ProfileFragment(), 2)
         setupClickListener(fourth, ChatScreenFragment(), 3)
         setupClickListener(reminderAdd, ReminderAddFragment(), 4)
-//        setupClickListener(reminderEdit, ReminderEditFragment(selectedReminder), 5)
         setupClickListener(noteAdd, NoteAddFragment(), 6)
-//        setupClickListener(noteEdit, NoteEditFragment(selectedNote), 7)
-        setupClickListener(comment, CommentFragment(), 8)
+//        setupClickListener(comment, CommentFragment(), 8)
 
         supportFragmentManager.registerFragmentLifecycleCallbacks(
             object : FragmentManager.FragmentLifecycleCallbacks() {
                 override fun onFragmentViewDestroyed(fm: FragmentManager, f: Fragment) {
                     super.onFragmentViewDestroyed(fm, f)
                     clickState = BooleanArray(10){ false }
+                    showMiniTextVisible()
                 }
             }, true)
 
@@ -174,6 +171,7 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
                 }
             }
             clickState[5] = !clickState[5]
+            showMiniTextVisible()
         })
         noteEdit.setOnClickListener(View.OnClickListener {
             if (!clickState[7]) {
@@ -204,12 +202,12 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
                 }
             }
             clickState[7] = !clickState[7]
+            showMiniTextVisible()
         })
         noteDelete.setOnClickListener(View.OnClickListener {
             val result = noteRepository.deleteNote(selectedNote.id)
             if (result > 0) {
                 // Note was successfully deleted
-                Log.d("MainActivity", "Note deleted: ID=${selectedNote.id}")
 
                 // Notify the ViewModel that a note was deleted
                 noteViewModel.noteDeleted()
@@ -247,7 +245,44 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
                 Log.e("MainActivity", "Failed to delete note: ID=${selectedNote.id}")
             }
         })
+        comment.setOnClickListener(View.OnClickListener {
+            if (!clickState[8]) {
+                supportFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_up_to_down_enter,
+                        R.anim.fade_out,
+                        R.anim.fade_in,
+                        R.anim.slide_down_enter
+                    )
+                    .add(R.id.nav_host_fragment_content_main, CommentFragment())
+                    .addToBackStack(null)
+                    .commit()
+                clickState = BooleanArray(10) { false }
 
+            } else {
+                val currentFragment =
+                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                if (currentFragment != null) {
+                    supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_down_exit,
+                            R.anim.fade_out,
+                            R.anim.fade_in,
+                            R.anim.slide_up_enter
+                        )
+                        .remove(currentFragment)
+                        .commit()
+                }
+            }
+            clickState[8] = !clickState[8]
+            showMiniTextVisible()
+        })
+
+        miniChatSendButton.setOnClickListener(View.OnClickListener {
+            if (miniChatInput.text.isNotEmpty()) {
+                miniChatText.text = miniChatInput.text
+            }
+        })
 
         val navController = findNavController(R.id.nav_host_fragment_content_main)
 
@@ -315,6 +350,12 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
 
     }
 
+    private fun showMiniTextVisible(){
+        if (clickState[8]||clickState[7]||clickState[6]||clickState[5]||clickState[4])
+            miniChatText.visibility = View.GONE
+        else miniChatText.visibility = View.VISIBLE
+    }
+
     override fun onDocumentClicked(document: RepositoryFragment.Document) {
         Log.d("Document", "onDocumentClicked: ")
         supportFragmentManager.beginTransaction()
@@ -332,7 +373,7 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
 
     private fun setupClickListener(linearLayout: LinearLayout, fragment: Fragment, index: Int) {
         linearLayout.setOnClickListener {
-            if (index !=2 && index != 6 && index != 8) {
+            if (index == 3) {
                 if (!clickState[index]) {
                     supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
@@ -345,6 +386,7 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
                         .addToBackStack(null)
                         .commit()
                     clickState = BooleanArray(10) { false }
+                    miniChatText.visibility = View.GONE
                 } else {
                     val currentFragment =
                         supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
@@ -359,37 +401,70 @@ class MainActivity : AppCompatActivity(),RepositoryFragment.OnDocumentClickListe
                             .remove(currentFragment)
                             .commit()
                     }
+                    miniChatText.visibility = View.VISIBLE
                 }
             } else {
-                if (!clickState[index]) {
-                    supportFragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_up_to_down_enter,
-                            R.anim.fade_out,
-                            R.anim.fade_in,
-                            R.anim.slide_down_enter
-                        )
-                        .replace(R.id.nav_host_fragment_content_main, fragment)
-                        .addToBackStack(null)
-                        .commit()
-                    clickState = BooleanArray(10) { false }
-                } else {
-                    val currentFragment =
-                        supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
-                    if (currentFragment != null) {
+                if (index !=2 && index != 4 && index != 6 && index != 8) {
+                    if (!clickState[index]) {
                         supportFragmentManager.beginTransaction()
                             .setCustomAnimations(
-                                R.anim.slide_down_exit,
+                                R.anim.slide_up_enter,
                                 R.anim.fade_out,
                                 R.anim.fade_in,
-                                R.anim.slide_up_enter
+                                R.anim.slide_down_exit
                             )
-                            .remove(currentFragment)
+                            .replace(R.id.nav_host_fragment_content_main, fragment)
+                            .addToBackStack(null)
                             .commit()
+                        clickState = BooleanArray(10) { false }
+                    } else {
+                        val currentFragment =
+                            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                        if (currentFragment != null) {
+                            supportFragmentManager.beginTransaction()
+                                .setCustomAnimations(
+                                    R.anim.slide_down_enter,
+                                    R.anim.fade_out,
+                                    R.anim.fade_in,
+                                    R.anim.slide_up_exit
+                                )
+                                .remove(currentFragment)
+                                .commit()
+                        }
+                    }
+                } else {
+                    if (!clickState[index]) {
+                        supportFragmentManager.beginTransaction()
+                            .setCustomAnimations(
+                                R.anim.slide_up_to_down_enter,
+                                R.anim.fade_out,
+                                R.anim.fade_in,
+                                R.anim.slide_down_enter
+                            )
+                            .replace(R.id.nav_host_fragment_content_main, fragment)
+                            .addToBackStack(null)
+                            .commit()
+                        clickState = BooleanArray(10) { false }
+                    } else {
+                        val currentFragment =
+                            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                        if (currentFragment != null) {
+                            supportFragmentManager.beginTransaction()
+                                .setCustomAnimations(
+                                    R.anim.slide_down_exit,
+                                    R.anim.fade_out,
+                                    R.anim.fade_in,
+                                    R.anim.slide_up_enter
+                                )
+                                .remove(currentFragment)
+                                .commit()
+                        }
                     }
                 }
+                miniChatText.visibility = View.VISIBLE
             }
             clickState[index] = !clickState[index]
+            showMiniTextVisible()
         }
     }
 

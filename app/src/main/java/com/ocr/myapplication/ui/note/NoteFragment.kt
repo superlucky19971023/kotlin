@@ -64,7 +64,6 @@ class NoteFragment : Fragment() {
             }
 
             override fun afterTextChanged(s: Editable?) {
-                Log.d("asdf", "after" + s.toString())
                 searchText = s.toString()
                 refreshNotesList()
             }
@@ -90,7 +89,6 @@ class NoteFragment : Fragment() {
         viewModel.noteDeletedEvent.observe(viewLifecycleOwner) { event ->
             event.getContentIfNotHandled()?.let { isDeleted ->
                 if (isDeleted) {
-                    Log.d("NoteFragment", "Note deleted event received")
                     refreshNotesList()
                 }
             }
@@ -140,6 +138,14 @@ class NoteFragment : Fragment() {
         @SuppressLint("NotifyDataSetChanged")
         fun updateData(newNotes: List<Note>) {
             notes = newNotes
+
+
+            if(notes.isEmpty()){
+                prevPosition = RecyclerView.NO_POSITION
+                selectedPosition = RecyclerView.NO_POSITION
+
+                noteSeletedListener?.onNoteItemSelected(false)
+            }
             notifyDataSetChanged()
         }
 
@@ -149,8 +155,14 @@ class NoteFragment : Fragment() {
 
             // Set the background based on whether this item is selected
 
+            if(notes.isEmpty()){
+                prevPosition = RecyclerView.NO_POSITION
+                selectedPosition = RecyclerView.NO_POSITION
+
+                noteSeletedListener?.onNoteItemSelected(false)
+            }
             if (position == selectedPosition) {
-                if (prevPosition == selectedPosition) {
+                if (prevPosition == selectedPosition ) {
                     holder.adapterContent.setBackgroundResource(R.color.default_note_item_background)
                     prevPosition = RecyclerView.NO_POSITION
                     selectedPosition = RecyclerView.NO_POSITION

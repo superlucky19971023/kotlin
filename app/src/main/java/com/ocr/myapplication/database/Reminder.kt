@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
+import com.ocr.myapplication.alarm.AlarmHelper
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.log
@@ -25,15 +26,14 @@ data class ReminderContainer(
 )
 
 // Repository class to handle database operations for Reminders
-class ReminderRepository(context: Context) {
+class ReminderRepository(private val context: Context) {
     private val dbHelper = DatabaseHelper(context)
+    private val alarmHelper = AlarmHelper(context)
 
-    // Insert a new reminder
+    // Insert a new reminder and schedule its alarm
     fun insertReminder(reminder: Reminder): Long {
-
         val db = dbHelper.openDatabase()
 
-        Log.d("ReminderDb", "insertReminder: "+reminder.startAt+reminder.endAt)
         val values = ContentValues().apply {
             put("icon", reminder.icon.toLong())
             put("content", reminder.content.toString())
@@ -43,7 +43,14 @@ class ReminderRepository(context: Context) {
 
         return try {
             val id = db.insert("table_reminder_container", null, values)
-            Log.d("ReminderDb", "insertReminder: "+id)
+            Log.d("ReminderDb", "insertReminder: $id")
+
+            if (id != -1L) {
+                // Set the ID on the reminder and schedule the alarm
+                reminder.id = id
+                alarmHelper.scheduleAlarm(reminder)
+            }
+
             id
         } catch (e: Exception) {
             Log.e("ReminderRepository", "Error adding reminder", e)
@@ -56,7 +63,8 @@ class ReminderRepository(context: Context) {
     // Get all reminders
     fun getAllReminders(): List<Reminder> {
         val remindersList = mutableListOf<Reminder>()
-        val selectQuery = "SELECT * FROM table_reminder_container ORDER BY startAt ASC"
+        val currentDate = System.currentTimeMillis().toString()
+        val selectQuery = "SELECT * FROM table_reminder_container WHERE endAt > '$currentDate' ORDER BY startAt ASC"
 
         val db = dbHelper.readableDatabase
         val cursor: Cursor = db.rawQuery(selectQuery, null)
@@ -68,8 +76,6 @@ class ReminderRepository(context: Context) {
                 val icon = cursor.getInt(cursor.getColumnIndexOrThrow("icon"))
                 val startAt = cursor.getString(cursor.getColumnIndexOrThrow("startAt"))
                 val endAt = cursor.getString(cursor.getColumnIndexOrThrow("endAt"))
-
-                Log.d("adsfasdf", "$id---$content---$icon---$startAt---$endAt",)
                 val reminder = Reminder(id, content, icon, startAt, endAt)
                 remindersList.add(reminder)
             } while (cursor.moveToNext())
@@ -141,46 +147,6 @@ class ReminderRepository(context: Context) {
         return containers
     }
 
-    // Search reminders by description
-    fun searchReminders(query: String): List<Reminder> {
-        val remindersList = mutableListOf<Reminder>()
-        val searchQuery = "%$query%" // Add wildcards for partial matching
-
-        val db = dbHelper.readableDatabase
-
-        // Create the SQL query to search in description
-        val selectQuery = """
-            SELECT * FROM table_reminder 
-            WHERE description LIKE ? 
-            ORDER BY startAt ASC
-        """.trimIndent()
-
-        try {
-            val cursor = db.rawQuery(selectQuery, arrayOf(searchQuery))
-
-            if (cursor.moveToFirst()) {
-                do {
-                    val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
-                    val description = cursor.getString(cursor.getColumnIndexOrThrow("description"))
-                    val icon = cursor.getInt(cursor.getColumnIndexOrThrow("icon"))
-                    val startAt = cursor.getString(cursor.getColumnIndexOrThrow("startAt"))
-                    val endAt = cursor.getString(cursor.getColumnIndexOrThrow("endAt"))
-
-                    val reminder = Reminder(id, description, icon, startAt, endAt)
-                    remindersList.add(reminder)
-                } while (cursor.moveToNext())
-            }
-
-            cursor.close()
-        } catch (e: Exception) {
-            Log.e("ReminderRepository", "Error searching reminders", e)
-        } finally {
-            db.close()
-        }
-
-        return remindersList
-    }
-
     // Get a single reminder by ID
     fun getReminderById(id: Long): Reminder? {
         val db = dbHelper.readableDatabase
@@ -211,7 +177,7 @@ class ReminderRepository(context: Context) {
         return reminder
     }
 
-    // Update an existing reminder
+    // Update an existing reminder and reschedule its alarm
     fun updateReminder(reminder: Reminder): Int {
         val db = dbHelper.writableDatabase
 
@@ -231,11 +197,20 @@ class ReminderRepository(context: Context) {
 
         db.close()
 
+        if (rowsAffected > 0) {
+            // Cancel the existing alarm and schedule a new one
+            alarmHelper.cancelAlarm(reminder.id)
+            alarmHelper.scheduleAlarm(reminder)
+        }
+
         return rowsAffected
     }
 
-    // Delete a reminder
+    // Delete a reminder and cancel its alarm
     fun deleteReminder(id: Long): Int {
+        // Cancel the alarm first
+        alarmHelper.cancelAlarm(id)
+
         val db = dbHelper.writableDatabase
 
         val rowsAffected = db.delete(

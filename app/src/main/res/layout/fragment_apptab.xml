@@ -42,12 +42,18 @@
                 android:textColor="#55565B" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/theme_selector"
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginVertical="10dp"
-            android:orientation="horizontal" />
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/theme_selector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp"
+                android:orientation="horizontal" />
+
+        </HorizontalScrollView>
 
     </LinearLayout>
 
@@ -81,12 +87,18 @@
                 android:textColor="#55565B" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/chat_screen_selector"
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginVertical="10dp"
-            android:orientation="horizontal" />
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/chat_screen_selector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
 
     </LinearLayout>
 
@@ -120,12 +132,16 @@
                 android:textColor="#55565B" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/repository_selector"
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginVertical="10dp"
-            android:orientation="horizontal" />
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:id="@+id/repository_selector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
 
     </LinearLayout>
 

@@ -25,6 +25,5 @@ class ChatScreenFragment : Fragment() {
         val appPreferences = AppPreferences(requireContext())
         Back = view.findViewById(R.id.chatscreen_background)
         Back.setBackgroundResource(appPreferences.getChatBackgroundImage())
-        enableDragToTopDismiss(view)
     }
 }

@@ -33,10 +33,10 @@ class ReminderAddFragment: Fragment() {
     private lateinit var cancelButton: TextView
     private lateinit var reminderRepository: ReminderRepository
     private lateinit var viewModel: ReminderViewModel
-    private lateinit var startDate: EditText
-    private lateinit var startTime: EditText
-    private lateinit var endDate: EditText
-    private lateinit var endTime: EditText
+    private lateinit var startDate: TextView
+    private lateinit var startTime: TextView
+    private lateinit var endDate: TextView
+    private lateinit var endTime: TextView
     private val calendar = Calendar.getInstance()
 
     override fun onCreateView(
@@ -68,6 +68,7 @@ class ReminderAddFragment: Fragment() {
         endTime = view.findViewById(R.id.end_at_time)
 
         description = view.findViewById(R.id.reminder_add_descripton)
+
         cancelButton.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .remove(this)
@@ -101,21 +102,19 @@ class ReminderAddFragment: Fragment() {
                     endAt = reminderEndTime.toString()
                 )
 
-                Log.d("asdf", newReminder.content + " --- " + newReminder.icon + " --- " + newReminder.startAt + " --- " + newReminder.endAt)
-                val insertedId= reminderRepository.insertReminder(newReminder)
+                val insertedId = reminderRepository.insertReminder(newReminder)
 
                 if (insertedId == -1L) {
                     Log.d("ReminderAdd", "Failed to add reminder to database")
                 } else {
-                    Log.d("ReminderAdd", "Successfully")
                     parentFragmentManager.setFragmentResult("reminder_added", Bundle())
                     viewModel.reminderAdded()
                     parentFragmentManager.beginTransaction().remove(this).commit()
                 }
-                startDate.setText("")
-                startTime.setText("")
-                endDate.setText("")
-                endTime.setText("")
+                startDate.text = ""
+                startTime.text = ""
+                endDate.text = ""
+                endTime.text = ""
                 description.setText("")
             } else {
                 if (descriptionInfo == null) {
@@ -183,23 +182,23 @@ class ReminderAddFragment: Fragment() {
     }
 
     private fun updateStartDateInView() {
-        val format = SimpleDateFormat("MM/dd/yyyy", Locale.US)
-        startDate.setText(format.format(calendar.time))
+        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        startDate.text = (format.format(calendar.time))
     }
 
     private fun updateStartTimeInView() {
-        val format = SimpleDateFormat("HH:mm", Locale.US)
-        startTime.setText(format.format(calendar.time))
+        val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+        startTime.text = (format.format(calendar.time))
     }
 
     private fun updateEndDateInView() {
-        val format = SimpleDateFormat("MM/dd/yyyy", Locale.US)
-        endDate.setText(format.format(calendar.time))
+        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        endDate.text = (format.format(calendar.time))
     }
 
     private fun updateEndTimeInView() {
-        val format = SimpleDateFormat("HH:mm", Locale.US)
-        endTime.setText(format.format(calendar.time))
+        val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+        endTime.text = (format.format(calendar.time))
     }
 
     @SuppressLint("ResourceAsColor")
@@ -253,5 +252,4 @@ class ReminderAddFragment: Fragment() {
         }
         return imageView
     }
-
 }

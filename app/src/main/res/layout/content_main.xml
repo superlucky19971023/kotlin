@@ -23,7 +23,7 @@
     <LinearLayout
         android:id="@+id/bottomLayout"
         android:layout_width="0dp"
-        android:layout_height="170dp"
+        android:layout_height="wrap_content"
         android:background="@drawable/main_footer"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -289,12 +289,13 @@
         </HorizontalScrollView>
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/mini_chat_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
             android:text="2021 tax file reports 2,427 payment transactions. processed through the payment card/third party network (page1)"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:visibility="visible" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -308,19 +309,23 @@
                 android:background="@drawable/chat_input"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/textView2"
+                <EditText
+                    android:id="@+id/mini_chat_input"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="Chat"
-                    android:textAlignment="center"
-                    android:textSize="24sp" />
+                    android:background="@drawable/mini_chat_button"
+                    android:hint="Chat"
+                    android:inputType="text"
+                    android:paddingStart="10dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
 
                 <ImageView
-                    android:id="@+id/imageView"
-                    android:layout_width="40dp"
-                    android:layout_height="match_parent"
+                    android:id="@+id/mini_chat_send_button"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginVertical="5dp"
                     app:srcCompat="@drawable/chat_send" />
             </LinearLayout>
 
